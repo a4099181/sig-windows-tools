@@ -1,7 +1,6 @@
 $Global:BaseDir = "$env:ALLUSERSPROFILE\Kubernetes"
 $Global:GithubSDNRepository = 'Microsoft/SDN'
 $Global:GithubSDNBranch = 'master'
-$Global:HomeDir = $Global:Home
 $Global:NetworkName = "cbr0"
 $Global:NetworkMode = "l2bridge"
 $Global:DockerImageTag = "1809"
@@ -123,18 +122,6 @@ function LoadGlobals()
     else {
         throw "$Global:InterfaceName doesn't exist"
     }
-
-    if (!($Global:HomeDir))
-    {
-        if ($env:HOMEDRIVE -And $env:HOMEPATH)
-        {
-            $Global:HomeDir = Join-Path -Path $env:HOMEDRIVE -ChildPath $env:HOMEPATH
-        }
-        elseif ($env:USERPROFILE)
-        {
-            $Global:HomeDir = $env:USERPROFILE
-        }
-    }
 }
 
 function ValidateConfig()
@@ -152,11 +139,6 @@ function ValidateConfig()
     if ($Global:Cri -ne "dockerd")
     {
         throw "$Global:Cri is not yet supported"
-    }
-
-    if (!($Global:HomeDir))
-    {
-        throw "HomeDir can not be discovered"
     }
 }
 
@@ -176,9 +158,6 @@ function PrintConfig()
     Write-Host "MasterIp          : $Global:MasterIp"
     Write-Host "ManagementIp      : $Global:ManagementIp"
     Write-Host "ManagementSubnet  : $Global:ManagementSubnet"
-    Write-Host "############################################"
-    Write-Host "Environment "
-    Write-Host "HomeDir           : $Global:HomeDir"
     Write-Host "############################################"
 
     ######################################################################################################################
