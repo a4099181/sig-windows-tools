@@ -678,36 +678,22 @@ function GetKubeletArguments()
         [parameter(Mandatory = $false)] $KubeletFeatureGates = ""
     )
     $kubeletArgs = @(
-        (get-command kubelet.exe -ErrorAction Stop).Source,
-        "--windows-service"
+        (get-command kubelet.exe -ErrorAction Stop).Source
         "--hostname-override=$(hostname)"
         '--v=6'
         "--pod-infra-container-image=$Global:PauseImage"
-        #'--resolv-conf=\"\"',
-        #'--allow-privileged=true',
-        #'--enable-debugging-handlers', # Comment for Config
-        #"--cluster-dns=$KubeDnsServiceIp", # Comment for Config
-        #'--cluster-domain=cluster.local', # Comment for Config
-        #'--hairpin-mode=promiscuous-bridge', # Comment for Config
-        '--image-pull-progress-deadline=20m'
-        '--cgroups-per-qos=false'
         "--log-dir=$LogDir"
-        '--logtostderr=false'
-        "--enforce-node-allocatable=`"`""
         '--network-plugin=cni'
         "--cni-bin-dir=$CniDir"
         "--cni-conf-dir=$CniConf"
         "--node-ip=$NodeIp"
         "--cert-dir=$env:SYSTEMDRIVE\var\lib\kubelet\pki"
-        "--config=$env:SYSTEMDRIVE\var\lib\kubelet\config.yaml"
         "--kubeconfig=$env:SYSTEMDRIVE\etc\kubernetes\kubelet.conf"
         "--bootstrap-kubeconfig=$env:SYSTEMDRIVE\etc\kubernetes\bootstrap-kubelet.conf"
+        "--config=$(GetUserDir)\.kube\kubelet.config"
+        '--logtostderr=false'
+        "--windows-service"
     )
-
-    if ($KubeletFeatureGates -ne "")
-    {
-        $kubeletArgs += "--feature-gates=$KubeletFeatureGates"
-    }
 
     return $kubeletArgs
 }
@@ -798,11 +784,10 @@ function InstallKubelet()
                     -NodeIp $NodeIp -KubeletFeatureGates $KubeletFeatureGates `
                     -LogDir $logDir
 
-    $kubeletBinPath = $((get-command kubelet.exe -ErrorAction Stop).Source)
+    $kubeletArgs = $kubeletArgs -join " "
+    Write-Host "kubeletArgs: $kubeletArgs"
 
-    New-Service -Name "kubelet" -StartupType Automatic -BinaryPathName "$kubeletBinPath --windows-service --v=6 --log-dir=$logDir --cert-dir=$env:SYSTEMDRIVE\var\lib\kubelet\pki --cni-bin-dir=$CniDir --cni-conf-dir=$CniConf --bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf --hostname-override=$hostname --pod-infra-container-image=$Global:PauseImage --enable-debugging-handlers  --cgroups-per-qos=false --enforce-node-allocatable=`"`" --logtostderr=false --network-plugin=cni --resolv-conf=`"`" --feature-gates=$KubeletFeatureGates"
-    # Investigate why the below doesn't work, probably a syntax error with the args
-    #New-Service -Name "kubelet" -StartupType Automatic -BinaryPathName "$kubeletArgs"
+    New-Service -Name "kubelet" -StartupType Automatic -BinaryPathName "$kubeletArgs"
     kubeadm join "$(GetAPIServerEndpoint)" --token "$Global:Token" --discovery-token-ca-cert-hash "$Global:CAHash"
     # Open firewall for 10250. Required for kubectl exec pod <>
     if (!(Get-NetFirewallRule -Name KubeletAllow10250 -ErrorAction SilentlyContinue ))
