@@ -252,7 +252,7 @@ if ($install.IsPresent)
                 ssh-keygen.exe
             }
         }
-        else
+        elseif (!(KubeConfigExists))
         {
             Write-Host "Generating SSH key"
             if (!(Test-Path "$env:USERPROFILE/.ssh")) { New-Item -Path "$env:USERPROFILE/.ssh" -ItemType "Directory" -Force }
