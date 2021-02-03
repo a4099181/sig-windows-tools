@@ -107,6 +107,7 @@ function LoadGlobals()
     $Global:NanoserverImage = $Global:ClusterConfiguration.Cri.Images.Nanoserver
     $Global:ServercoreImage = $Global:ClusterConfiguration.Cri.Images.ServerCore
     $Global:Cni = $Global:ClusterConfiguration.Cni.Name
+    $Global:CniFlannelDUrl = ($Global:ClusterConfiguration.Cni.Source | Where-Object Name -eq flanneld).Url
     $Global:Release = $Global:ClusterConfiguration.Kubernetes.Source.Release
     $Global:InterfaceName = $Global:ClusterConfiguration.Cni.InterfaceName
     $Global:NetworkPlugin =$Global:ClusterConfiguration.Cni.Plugin.Name
@@ -291,7 +292,7 @@ function DownloadCniBinaries($NetworkMode, $CniPath)
     
     CreateDirectory $CniPath
     CreateDirectory $CniPath\config
-    DownloadFlannelBinaries -Destination $Global:BaseDir
+    DownloadFlannelBinaries -FlannelDUrl $Global:CniFlannelDUrl -Destination $Global:BaseDir
     DownloadFile -Url https://github.com/containernetworking/plugins/releases/download/v0.8.2/cni-plugins-windows-amd64-v0.8.2.tgz -Destination $Global:BaseDir/cni-plugins-windows-amd64-v0.8.2.tgz
     & cmd /c tar -zxvf $Global:BaseDir/cni-plugins-windows-amd64-v0.8.2.tgz -C $CniPath '2>&1'
     if (!$?) { Write-Warning "Error decompressing file, exiting."; exit; }
@@ -301,12 +302,12 @@ function DownloadFlannelBinaries()
 {
     param(
         [Parameter(Mandatory = $false, Position = 0)]
-        [string] $Release = "0.11.0",
+        [string] $FlannelDUrl = "https://github.com/coreos/flannel/releases/download/v0.11.0/flanneld.exe",
         [string] $Destination = "c:\flannel"
     )
 
     Write-Host "Downloading Flannel binaries"
-    DownloadFile -Url  "https://github.com/coreos/flannel/releases/download/v${Release}/flanneld.exe" -Destination $Destination\flanneld.exe 
+    DownloadFile -Url $FlannelDUrl -Destination $Destination\flanneld.exe
 }
 
 function GetKubeFlannelPath()
