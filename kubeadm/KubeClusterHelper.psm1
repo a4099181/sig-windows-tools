@@ -840,6 +840,7 @@ function InstallKubeProxy()
         -LogDir $logDir
     
     New-Service -Name "kubeproxy" -StartupType Automatic -BinaryPathName "$proxyArgs"
+    sc.exe config kubeproxy start=delayed-auto
 }
 
 function UninstallKubeProxy()
@@ -877,6 +878,7 @@ function CreateService()
         -DependsOn $DependsOn `
         -displayName $ServiceName -startupType Automatic    `
         -Description "$ServiceName Kubernetes Service" 
+    sc.exe config $ServiceName start=delayed-auto
 
     Write-Host @" 
     ++++++++++++++++++++++++++++++++
